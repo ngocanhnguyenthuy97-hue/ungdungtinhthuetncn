@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Ứng dụng tính thuế TNCN</title>
+
+<style>
+
+:root {
+  --primary: #a7a7a7;
+  --primary-strong: #1a1a1a;
+  --primary-soft: rgba(180, 180, 180, 0.35);
+  --text: #0a0a0a;
+  --card: rgba(245, 245, 245, 0.90);
+  --border: rgba(80, 80, 80, 0.18);
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+
+background-size:cover;
+background-position:center;
+
+color:var(--text);
+
+}
+
+.overlay{
+
+position:fixed;
+left:0;
+top:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.55);
+
+pointer-events:none;
+
+}
+
+.container{
+
+position:relative;
+z-index:2;
+
+width:420px;
+
+padding:30px;
+
+border-radius:18px;
+
+background: linear-gradient(135deg, rgba(245, 245, 245, 0.95), rgba(220, 220, 220, 0.85));
+
+backdrop-filter:blur(14px);
+
+box-shadow:0 14px 48px rgba(0,0,0,0.25);
+
+border:1px solid rgba(80, 80, 80, 0.2);
+
+}
+
+.logo{
+
+display:flex;
+align-items:center;
+justify-content:flex-start;
+
+}
+
+.logo img{
+
+width:90px;
+background:rgba(255,255,255,0.45);
+padding:6px;
+border-radius:16px;
+box-shadow:0 8px 18px rgba(0,0,0,0.14);
+border:1px solid rgba(255,255,255,0.35);
+
+}
+
+.header{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-bottom:18px;
+}
+
+.header-top {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.dropdown-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(80, 80, 80, 0.35);
+  background: rgba(230, 230, 230, 0.75);
+  color: var(--primary-strong);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.dropdown-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: rgba(245, 245, 245, 0.95);
+  border: 1px solid rgba(80, 80, 80, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  min-width: 220px;
+  z-index: 10;
+}
+
+.dropdown-content a {
+  display: block;
+  padding: 10px 14px;
+  color: #0a0a0a;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-content a:hover {
+  background: rgba(200, 200, 200, 0.8);
+  transform: translateX(4px);
+}
+
+.dropdown.open .dropdown-content {
+  display: block;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0a0a0a;
+  margin-bottom: 0;
+}
+
+
+.input-group{
+
+margin-bottom:15px;
+
+}
+
+label{
+
+display:block;
+font-size:14px;
+margin-bottom:5px;
+color: rgba(10, 10, 10, 0.9);
+
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 120, 120, 0.45);
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text);
+  transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+input:hover, select:hover {
+  background: rgba(235, 235, 235, 0.45);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: rgba(120, 120, 120, 0.75);
+  box-shadow: 0 0 0 4px rgba(120, 120, 120, 0.18);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+button{
+
+width:100%;
+padding:12px;
+border: 1px solid rgba(80, 80, 80, 0.4);
+border-radius:10px;
+
+background: linear-gradient(135deg, rgba(180, 180, 180, 0.98), rgba(160, 160, 160, 0.98));
+color:#000000;
+
+font-size:16px;
+font-weight: 700;
+
+cursor:pointer;
+margin-top:10px;
+
+transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+button:hover{
+  transform: translateY(-2px);
+  filter: brightness(0.95);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+  border-color: rgba(60, 60, 60, 0.75);
+}
+
+.result{
+
+margin-top:20px;
+
+padding:15px;
+
+border-radius:12px;
+
+background: rgba(240, 240, 240, 0.85);
+
+border: 1px solid rgba(100, 100, 100, 0.25);
+
+font-size:15px;
+
+color: var(--text);
+
+box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+
+}
+
+.tax-links {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(240, 240, 240, 0.35), rgba(220, 220, 220, 0.35));
+  border: 1px solid rgba(100, 100, 100, 0.22);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.16);
+  backdrop-filter: blur(8px);
+}
+
+.tax-links h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: var(--primary-strong);
+}
+
+.link-box {
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(245, 245, 245, 0.55);
+  border: 1px solid rgba(100, 100, 100, 0.22);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.link-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+  background: rgba(220, 220, 220, 0.8);
+  border-color: rgba(120, 120, 120, 0.3);
+}
+
+.link-box h3 {
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: var(--primary-strong);
+}
+
+.link-box a {
+  display: inline-block;
+  margin-top: 8px;
+  color: rgba(10, 10, 10, 0.9);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-box a:hover {
+  text-decoration: underline;
+}
+
+.link-box ol {
+  margin: 0;
+  padding-left: 20px;
+  list-style-position: inside;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="overlay"></div>
+
+<div class="container">
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <img src="logo-xanhgo.png" alt="Logo">
+    </div>
+    <div class="title">Ứng dụng tính thuế TNCN</div>
+  </div>
+  <div class="dropdown">
+    <button class="dropdown-button">Home ▾</button>
+    <div class="dropdown-content">
+      <a href="index.html">Trang chính</a>
+      <a href="quyettoan.html">Hướng dẫn quyết toán</a>
+      <a href="#result">Tính thuế</a>
+    </div>
+  </div>
+</div>
+
+<div class="input-group">
+<label>Năm quyết toán</label>
+
+<select id="year">
+
+<option>2023</option>
+<option>2024</option>
+<option>2025</option>
+<option>2026</option>
+<option>2027</option>
+
+</select>
+</div>
+
+<div class="input-group">
+
+<label>Tổng thu nhập năm (VND)</label>
+<input type="number" id="income">
+
+</div>
+
+<div class="input-group">
+
+<label>Mức lương đóng bảo hiểm (VND)</label>
+<input type="number" id="baseSalary" min="0" step="1000" placeholder="Mức lương dùng để tính BH" />
+
+</div>
+
+<div class="input-group">
+
+<label>Tỷ lệ đóng của người lao động (%)</label>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+  <div>
+    <label style="font-size:12px; color:rgba(15,51,40,0.85);">BHXH</label>
+    <input type="number" id="rateBhxh" value="8" disabled style="width:100%;" />
+  </div>
+  <div>
+    <label style="font-size:12px; color:rgba(15,51,40,0.85);">BHYT</label>
+    <input type="number" id="rateBhyt" value="1.5" disabled style="width:100%;" />
+  </div>
+  <div>
+    <label style="font-size:12px; color:rgba(15,51,40,0.85);">BHTN</label>
+    <input type="number" id="rateBhtn" value="1" disabled style="width:100%;" />
+  </div>
+  <div>
+    <label style="font-size:12px; color:rgba(15,51,40,0.85);">Tổng</label>
+    <input type="number" id="insRate" value="10.5" disabled style="width:100%; font-weight:700;" />
+  </div>
+</div>
+
+</div>
+
+<div class="input-group">
+
+<label>Số tháng đóng</label>
+<input type="number" id="months" min="1" max="12" value="12" />
+
+</div>
+
+<div class="input-group">
+
+<label>Bảo hiểm đã đóng (VND)</label>
+<input type="number" id="insurance">
+
+</div>
+
+<button onclick="calculateInsurance()" style="margin-bottom: 12px;">
+
+Tính đóng BH
+
+</button>
+
+<div class="result" id="insuranceResult" style="margin-top: 10px; padding: 12px; font-size: 14px; background: rgba(237,249,247,0.9); border: 1px solid rgba(46,151,110,0.2); border-radius: 10px; display: none;">
+  Tổng tiền đóng BH: <b id="insuranceAmount">0</b> VND
+</div>
+
+<div class="input-group">
+
+<label>Số người phụ thuộc</label>
+<input type="number" id="dependents" value="0">
+
+</div>
+
+<button onclick="calculateTax()">
+
+Tính thuế
+
+</button>
+
+<div class="result" id="result">
+
+Kết quả hiển thị tại đây
+
+</div>
+
+<div class="tax-links">
+
+<h2>Biểu mẫu và cổng kê khai thuế</h2>
+
+<div class="link-box">
+
+<h3>Cổng kê khai thuế điện tử</h3>
+
+<p>
+Thực hiện quyết toán thuế trực tuyến tại:
+</p>
+
+<a href="https://canhan.gdt.gov.vn" target="_blank">
+
+Cổng Thuế điện tử cá nhân (eTax)
+
+</a>
+
+</div>
+
+<div class="link-box">
+
+<h3>Biểu mẫu cần dùng khi quyết toán</h3>
+
+<ol>
+
+<li>
+Tờ khai quyết toán thuế TNCN
+<b>Mẫu 02/QTT-TNCN</b>
+</li>
+
+<li>
+Phụ lục người phụ thuộc
+<b>Mẫu 02-1/BK-QTT-TNCN</b>
+</li>
+
+<li>
+Chứng từ khấu trừ thuế TNCN
+</li>
+
+</ol>
+
+</div>
+
+<div class="link-box">
+
+<h3>Hướng dẫn quyết toán nhiều nguồn thu nhập</h3>
+
+<a href="quyettoan.html">
+
+Xem hướng dẫn từng bước để quyết toán thuế nhiều nguồn thu
+
+</a>
+
+</div>
+
+<div class="link-box">
+
+<h3>Tải biểu mẫu thuế</h3>
+
+<a href="https://gdt.gov.vn" target="_blank">
+
+Truy cập trang Tổng cục Thuế để tải biểu mẫu
+
+</a>
+
+</div>
+
+</div>
+
+<script>
+
+function dailyBackground(){
+  const images=[
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470',
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee',
+    'https://images.unsplash.com/photo-1491553895911-0055eca6402d',
+    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429',
+    'https://images.unsplash.com/photo-1502082553048-f009c37129b9',
+    'https://images.unsplash.com/photo-1465101162946-4377e57745c3',
+    'https://images.unsplash.com/photo-1500530857565-8aa6e13f28b8',
+  ];
+
+  const today=new Date().toISOString().slice(0,10);
+  const hash=[...today].reduce((h,c)=>h+c.charCodeAt(0),0);
+  const index=hash%images.length;
+  document.body.style.backgroundImage=`url(${images[index]}?auto=format&fit=crop&w=1600&q=80)`;
+}
+
+function calculateProgressiveTax(income,brackets){
+  let tax=0;
+  let prev=0;
+
+  for(const bracket of brackets){
+    if(income<=prev) break;
+    const upper=Math.min(income,bracket.limit);
+    tax+=(upper-prev)*bracket.rate;
+    prev=bracket.limit;
+  }
+
+  return tax;
+}
+
+function calculateInsurance(){
+  const baseSalary=parseFloat(document.getElementById("baseSalary").value)||0;
+  const rateBhxh=parseFloat(document.getElementById("rateBhxh").value)||0;
+  const rateBhyt=parseFloat(document.getElementById("rateBhyt").value)||0;
+  const rateBhtn=parseFloat(document.getElementById("rateBhtn").value)||0;
+  const rate=rateBhxh+rateBhyt+rateBhtn;
+
+  document.getElementById("insRate").value=rate.toFixed(1);
+
+  const months=parseInt(document.getElementById("months").value,10)||0;
+  const insuranceAmount=Math.round(baseSalary*months*(rate/100));
+  document.getElementById("insurance").value=insuranceAmount;
+
+  const insuranceResult=document.getElementById("insuranceResult");
+  const insuranceAmountEl=document.getElementById("insuranceAmount");
+  insuranceAmountEl.textContent=insuranceAmount.toLocaleString();
+  insuranceResult.style.display="block";
+}
+
+function calculateTax(){
+  const year=parseInt(document.getElementById("year").value,10);
+  const income=parseFloat(document.getElementById("income").value)||0;
+  const insurance=parseFloat(document.getElementById("insurance").value)||0;
+  const dependents=parseInt(document.getElementById("dependents").value,10)||0;
+
+  const personalDeduction=132000000;
+  const dependentDeduction=52800000*dependents;
+
+  let taxableIncome=income-insurance-personalDeduction-dependentDeduction;
+  if(taxableIncome<0) taxableIncome=0;
+
+  const bracketsOld=[
+    {limit:60000000,rate:0.05},
+    {limit:120000000,rate:0.1},
+    {limit:216000000,rate:0.15},
+    {limit:384000000,rate:0.2},
+    {limit:624000000,rate:0.25},
+    {limit:960000000,rate:0.3},
+    {limit:Infinity,rate:0.35}
+  ];
+
+  const bracketsNew=[
+    {limit:120000000,rate:0.05},
+    {limit:360000000,rate:0.1},
+    {limit:720000000,rate:0.2},
+    {limit:1200000000,rate:0.3},
+    {limit:Infinity,rate:0.35}
+  ];
+
+  const brackets=year<=2025?bracketsOld:bracketsNew;
+  const tax=calculateProgressiveTax(taxableIncome,brackets);
+
+  document.getElementById("result").innerHTML=
+    `Thu nhập tính thuế: <b>${taxableIncome.toLocaleString()} VND</b><br>`+
+    `Thuế TNCN phải nộp: <b>${tax.toLocaleString()} VND</b>`;
+}
+
+dailyBackground();
+
+// Dropdown click toggle for touch / click devices
+const dropdown = document.querySelector('.dropdown');
+const dropdownButton = dropdown.querySelector('.dropdown-button');
+
+dropdownButton.addEventListener('click', (event) => {
+  event.stopPropagation();
+  dropdown.classList.toggle('open');
+});
+
+document.addEventListener('click', () => {
+  dropdown.classList.remove('open');
+});
+
+</script>
+
+</body>
+</html>

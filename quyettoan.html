@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hướng dẫn quyết toán thuế TNCN</title>
+  <style>
+    :root {
+      --primary: #a7a7a7;
+      --primary-strong: #2c2c2c;
+      --primary-soft: rgba(200, 200, 200, 0.35);
+      --text: #0a0a0a;
+      --card: rgba(245, 245, 245, 0.85);
+      --border: rgba(50, 50, 50, 0.18);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 1s ease;
+      color: var(--text);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(245, 245, 245, 0.9), rgba(220, 220, 220, 0.75));
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(50, 50, 50, 0.2);
+    }
+
+    h1 {
+      font-size: 26px;
+      color: var(--text);
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: rgba(30, 30, 30, 0.95);
+    }
+
+    p {
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    ol {
+      padding-left: 20px;
+      margin-bottom: 18px;
+    }
+
+    li {
+      margin-bottom: 10px;
+    }
+
+    .note {
+      background: rgba(230, 230, 230, 0.85);
+      border-left: 4px solid rgba(80, 80, 80, 0.65);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 18px;
+      margin-bottom: 18px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .note:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    }
+
+    .step {
+      background: rgba(240, 240, 240, 0.85);
+      border: 1px solid rgba(50, 50, 50, 0.18);
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 18px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    .step:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+      background: rgba(240, 240, 240, 0.95);
+    }
+
+    .step h2 {
+      margin-top: 0;
+    }
+
+    a {
+      color: #1a1a1a;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: rgba(200, 200, 200, 0.65);
+      color: #0a0a0a;
+      transition: background 0.25s ease, transform 0.25s ease;
+    }
+
+    .back:hover {
+      background: rgba(200, 200, 200, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo img {
+      width: 64px;
+      height: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(80, 80, 80, 0.3);
+      background: rgba(245, 245, 245, 0.8);
+      padding: 6px;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 0;
+    }
+
+    .dropdown-button {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(80, 80, 80, 0.35);
+      background: rgba(230, 230, 230, 0.65);
+      color: rgba(20, 20, 20, 0.95);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 110%;
+      left: 0;
+      background: rgba(245, 245, 245, 0.92);
+      border: 1px solid rgba(80, 80, 80, 0.20);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+      min-width: 220px;
+      z-index: 10;
+    }
+
+    .dropdown-content a {
+      display: block;
+      padding: 10px 14px;
+      color: rgba(20, 20, 20, 0.9);
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .dropdown-content a:hover {
+      background: rgba(210, 210, 210, 0.8);
+      transform: translateX(4px);
+    }
+
+    .dropdown:hover .dropdown-content,
+    .dropdown.open .dropdown-content {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <img src="logo-xanhgo.png" alt="Logo XanhGo" />
+      </div>
+      <div class="dropdown">
+        <button class="dropdown-button">Home ▾</button>
+        <div class="dropdown-content">
+          <a href="index.html">Trang chính</a>
+        </div>
+      </div>
+    </div>
+
+    <h1>Hướng dẫn quyết toán thuế TNCN (nhiều nguồn thu nhập)</h1>
+
+    <p>Trang này giúp bạn thực hiện quyết toán thuế điện tử khi có <b>từ 2 nguồn thu nhập trở lên</b>, bao gồm: lương, thu nhập từ hợp đồng, cổ tức, cho thuê tài sản, v.v.</p>
+
+    <div class="step">
+      <h2>Bước 1: Chuẩn bị hồ sơ và chứng từ</h2>
+      <ol>
+        <li>Thu thập <b>mẫu 02/QTT-TNCN</b> (tờ khai quyết toán).</li>
+        <li>Chuẩn bị <b>phụ lục người phụ thuộc</b> (nếu có).</li>
+        <li>Thu thập các chứng từ khấu trừ thuế của từng nguồn thu (mẫu 05/QTT-TNCN, biên lai, v.v.).</li>
+        <li>Lưu giữ bảng sao kê, quyết toán lương, quyết định trả thù lao, hợp đồng hợp tác, v.v.</li>
+      </ol>
+    </div>
+
+    <div class="note">
+      <strong>Lưu ý:</strong> Nếu có nhiều nguồn thu nhập, bạn cần tách rõ từng nguồn (ví dụ: lương công ty A, thù lao từ công ty B, cổ tức từ công ty C). Việc tách rõ giúp tránh thiếu sót khi nhập thông tin vào form quyết toán.
+    </div>
+
+    <div class="step">
+      <h2>Bước 2: Tính tổng thu nhập</h2>
+      <ol>
+        <li>Tính tổng thu nhập chịu thuế từng nguồn (sau khi trừ các khoản được giảm trừ như bảo hiểm bắt buộc, giảm trừ gia cảnh, v.v.).</li>
+        <li>Cộng tất cả nguồn lại để có <b>tổng thu nhập chịu thuế</b>.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h2>Bước 3: Nhập dữ liệu vào cổng eTax</h2>
+      <ol>
+        <li>Đăng nhập vào <a href="https://canhan.gdt.gov.vn" target="_blank">Cổng thuế điện tử cá nhân (eTax)</a> bằng mã số thuế.</li>
+        <li>Chọn chức năng <b>quyết toán thuế</b> (tờ khai mẫu 02/QTT-TNCN).</li>
+        <li>Nhập lần lượt các nguồn thu theo hướng dẫn, nhớ ghi rõ tên nguồn và số tiền thu được.</li>
+        <li>Nhập các khoản giảm trừ (bảo hiểm, giảm trừ gia cảnh, người phụ thuộc...).</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h2>Bước 4: Kiểm tra và nộp</h2>
+      <ol>
+        <li>Kiểm tra lại toàn bộ số liệu, đặc biệt là số tiền thu nhập, giảm trừ, và số người phụ thuộc.</li>
+        <li>Nộp tờ khai và in biên lai nộp thuế (nếu nộp trực tuyến) để làm bằng chứng.</li>
+      </ol>
+    </div>
+
+    <div class="note">
+      <strong>Tip:</strong> Lưu lại các file PDF/ảnh chụp của biên lai và tờ khai để đối chiếu khi cần, và để phòng trường hợp kiểm tra sau này.
+    </div>
+
+    <a href="index.html" class="back">← Quay về trang chính</a>
+  </div>
+
+  <script>
+    function changeBackground(){
+      const hour=new Date().getHours();
+      let bg="";
+      if(hour>=5 && hour<11){
+        bg="https://images.unsplash.com/photo-1501785888041-af3ef285b470";
+      } else if(hour>=11 && hour<17){
+        bg="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee";
+      } else if(hour>=17 && hour<19){
+        bg="https://images.unsplash.com/photo-1491553895911-0055eca6402d";
+      } else {
+        bg="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429";
+      }
+      document.body.style.backgroundImage="url("+bg+")";
+    }
+
+    changeBackground();
+
+    // Dropdown click toggle (works on touch devices)
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownButton = dropdown.querySelector('.dropdown-button');
+
+    dropdownButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => {
+      dropdown.classList.remove('open');
+    });
+  </script>
+</body>
+</html>
