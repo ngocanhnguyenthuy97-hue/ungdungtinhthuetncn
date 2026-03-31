@@ -1,190 +1,239 @@
-// Tax calculation engine for Vietnam PIT (Law 2025)
-// Progressive tax system with 5 brackets
+'use client';
 
-export interface TaxCalculationInput {
-  totalIncome: number; // Annual income in VND
-  socialInsurance: number; // Social insurance contributions
-  healthInsurance: number; // Health insurance
-  unemploymentInsurance: number; // Unemployment insurance
-  dependents: number; // Number of dependents
-  taxWithheld: number; // Tax already withheld by employer
+import { useState } from 'react';
+import Link from 'next/link';
+import { Navigation } from '@/components/Navigation';
+import { AIAssistant } from '@/components/AIAssistant';
+import { Card, Header, Button, FormField, ProgressSteps } from '@/components/UI';
+import { formatCurrency } from '@/lib/taxCalculator';
+import { AlertCircle } from 'lucide-react';
+
+interface IncomeData {
+  totalIncome: string;
+  socialInsurance: string;
+  healthInsurance: string;
+  unemploymentInsurance: string;
+  dependents: string;
+  taxWithheld: string;
   regulatoryPeriod: 'before_2025_07_01' | 'after_2025_07_01';
-  taxYear?: number; // Năm quyết toán (2025, 2026, ...)
-
+  taxYear: string;
 }
 
-export interface TaxCalculationResult {
-  grossIncome: number;
-  insuranceContributions: number;
-  personalDeduction: number;
-  dependentDeduction: number;
-  taxableIncome: number;
-  taxInBrackets: Array<{
-    bracket: number;
-    rate: number;
-    lower: number;
-    upper: number;
-    amount: number;
-    tax: number;
-  }>;
-  totalTax: number;
-  taxPaid: number;
-  refundAmount: number;
-  additionalTax: number;
-  taxYear: number;
-}
+export default function IncomeInputPage() {
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState<IncomeData>({
+    totalIncome: '',
+    socialInsurance: '',
+    healthInsurance: '',
+    unemploymentInsurance: '',
+    dependents: '0',
+    taxWithheld: '',
+    regulatoryPeriod: 'after_2025_07_01',
+    taxYear: '2026',
+  });
 
-// Legacy brackets up to 30/06/2025 (7 bậc)
-const OLD_TAX_BRACKETS = [
-  { rate: 0.05, lower: 0, upper: 5_000_000 },
-  { rate: 0.1, lower: 5_000_000, upper: 10_000_000 },
-  { rate: 0.15, lower: 10_000_000, upper: 18_000_000 },
-  { rate: 0.2, lower: 18_000_000, upper: 32_000_000 },
-  { rate: 0.25, lower: 32_000_000, upper: 52_000_000 },
-  { rate: 0.3, lower: 52_000_000, upper: 80_000_000 },
-  { rate: 0.35, lower: 80_000_000, upper: Infinity },
-];
+  const handleChange = (field: keyof IncomeData, value: string) => {
+    setData({ ...data, [field]: value });
+  };
 
-// 5 bậc từ 01/07/2025 và 01/01/2026 cho thu nhập lương, tiền công
-const NEW_TAX_BRACKETS = [
-  { rate: 0.05, lower: 0, upper: 10_000_000 },
-  { rate: 0.1, lower: 10_000_000, upper: 30_000_000 },
-  { rate: 0.2, lower: 30_000_000, upper: 60_000_000 },
-  { rate: 0.3, lower: 60_000_000, upper: 100_000_000 },
-  { rate: 0.35, lower: 100_000_000, upper: Infinity },
-];
-
-// Giảm trừ gia cảnh theo năm áp dụng
-const PERSONAL_DEDUCTION_2025 = 11_000_000; // per month
-const DEPENDENT_DEDUCTION_2025 = 4_400_000; // per month per dependent
-const PERSONAL_DEDUCTION_2026 = 15_500_000; // per month
-const DEPENDENT_DEDUCTION_2026 = 6_200_000; // per month per dependent
-
-export function calculateTax(input: TaxCalculationInput): TaxCalculationResult {
-  const year = input.taxYear || (input.regulatoryPeriod === 'before_2025_07_01' ? 2024 : 2026);
-
-  const personalDeductionMonthly = year >= 2026 ? PERSONAL_DEDUCTION_2026 : PERSONAL_DEDUCTION_2025;
-  const dependentDeductionMonthly = year >= 2026 ? DEPENDENT_DEDUCTION_2026 : DEPENDENT_DEDUCTION_2025;
-
-  // Calculate monthly values (convert annual to monthly rates)
-  const monthlyGrossIncome = input.totalIncome / 12;
-  const monthlyInsurance = input.socialInsurance / 12 + input.healthInsurance / 12 + input.unemploymentInsurance / 12;
-  const monthlyPersonalDeduction = personalDeductionMonthly;
-  const monthlyDependentDeduction = dependentDeductionMonthly * input.dependents;
-
-  // Calculate taxable income for monthly
-  const monthlyTaxableIncome = Math.max(
-    0,
-    monthlyGrossIncome - monthlyInsurance - monthlyPersonalDeduction - monthlyDependentDeduction
-  );
-
-  // Calculate taxable income for annual
-  const taxableIncome = monthlyTaxableIncome * 12;
-
-  // Select bracket set by period/year
-  const taxBrackets =
-    year <= 2024 || input.regulatoryPeriod === 'before_2025_07_01'
-      ? OLD_TAX_BRACKETS
-      : NEW_TAX_BRACKETS;
-
-  let totalTax = 0;
-  const taxInBrackets: TaxCalculationResult['taxInBrackets'] = [];
-
-  for (let i = 0; i < taxBrackets.length; i++) {
-    const bracket = taxBrackets[i];
-    const nextBracketLower = i < taxBrackets.length - 1 ? taxBrackets[i + 1].lower : bracket.upper;
-
-    let bracketIncome = 0;
-
-    if (monthlyTaxableIncome > bracket.lower) {
-      const upper = i === taxBrackets.length - 1 ? monthlyTaxableIncome : Math.min(monthlyTaxableIncome, nextBracketLower);
-      bracketIncome = Math.max(0, upper - bracket.lower);
+  const handleNext = () => {
+    if (!data.totalIncome || !data.taxWithheld) {
+      alert('Vui lòng nhập thu nhập tổng cộng và số thuế đã nộp');
+      return;
     }
 
-    const bracketTax = bracketIncome * bracket.rate;
-    totalTax += bracketTax;
-
-    taxInBrackets.push({
-      bracket: i + 1,
-      rate: bracket.rate * 100,
-      lower: bracket.lower,
-      upper: bracket.upper === Infinity ? undefined : bracket.upper,
-      amount: bracketIncome,
-      tax: bracketTax,
-    });
-  }
-
-  // Annual tax (monthly tax * 12)
-  const annualTax = totalTax * 12;
-
-  // Calculate refund or additional tax
-  const refundAmount = input.taxWithheld > annualTax ? input.taxWithheld - annualTax : 0;
-  const additionalTax = annualTax > input.taxWithheld ? annualTax - input.taxWithheld : 0;
-
-  return {
-    grossIncome: input.totalIncome,
-    insuranceContributions: input.socialInsurance + input.healthInsurance + input.unemploymentInsurance,
-    personalDeduction: personalDeductionMonthly * 12,
-    dependentDeduction: dependentDeductionMonthly * 12,
-    taxableIncome: Math.round(taxableIncome),
-    taxInBrackets: taxInBrackets.map(b => ({
-      ...b,
-      amount: Math.round(b.amount),
-      tax: Math.round(b.tax),
-    })),
-    totalTax: Math.round(annualTax),
-    taxPaid: input.taxWithheld,
-    refundAmount: Math.round(refundAmount),
-    additionalTax: Math.round(additionalTax),
-    taxYear: year,
+    // Store data in session storage for next page
+    sessionStorage.setItem('incomeData', JSON.stringify(data));
+    setStep(2);
   };
-}
 
-export function checkEligibility(
-  companiesCount: number,
-  employerFinalizedTax: boolean,
-  hasAdditionalIncome: boolean
-): { needsFinalization: boolean; reason: string } {
-  // Logic: Need to finalize if:
-  // - Multiple employers
-  // - Employer didn't finalize
-  // - Additional income sources
-  if (companiesCount > 1) {
-    return {
-      needsFinalization: true,
-      reason: 'Bạn có thu nhập từ nhiều công ty, cần tự quyết toán thuế',
+  const handleCalculate = () => {
+    if (!data.totalIncome || !data.taxWithheld) {
+      alert('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    // Đồng bộ regulatoryPeriod theo năm
+    const year = Number(data.taxYear);
+    const period = year <= 2024 ? 'before_2025_07_01' : 'after_2025_07_01';
+
+    const dataToSave = {
+      ...data,
+      regulatoryPeriod: period,
     };
-  }
 
-  if (!employerFinalizedTax) {
-    return {
-      needsFinalization: true,
-      reason: 'Công ty không quyết toán thuế, bạn cần tự quyết toán',
-    };
-  }
-
-  if (hasAdditionalIncome) {
-    return {
-      needsFinalization: true,
-      reason: 'Bạn có thu nhập phát sinh khác, cần tự quyết toán thuế',
-    };
-  }
-
-  return {
-    needsFinalization: false,
-    reason: 'Công ty đã quyết toán thuế cho bạn, không cần tự quyết toán',
+    sessionStorage.setItem('incomeData', JSON.stringify(dataToSave));
+    window.location.href = '/results';
   };
-}
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+  const totalInsurance = 
+    (Number(data.socialInsurance) || 0) +
+    (Number(data.healthInsurance) || 0) +
+    (Number(data.unemploymentInsurance) || 0);
 
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat('vi-VN').format(value);
+  return (
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-3xl mx-auto px-4 py-12">
+          <Header title="💰 Nhập Thông Tin Thu Nhập" subtitle="Cung cấp thông tin để tính toán thuế chính xác" />
+
+          <ProgressSteps steps={['Thông tin', 'Xác nhận', 'Kết quả']} currentStep={1} />
+
+          <Card className="mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-900">
+                <p className="font-semibold mb-1">Hướng dẫn nhập liệu:</p>
+                <ul className="space-y-1 text-xs">
+                  <li>• Thu nhập tính từ tháng 1 đến tháng 12 (cho năm nào đó)</li>
+                  <li>• Nếu bảo hiểm được trừ tự động, hãy nhập số tiền bảo hiểm</li>
+                  <li>• Nếu không biết chính xác, kiểm tra hóa đơn lương cuối năm</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          {/* Income Section */}
+          <Card className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">📊 Thông Tin Thu Nhập</h3>
+            <div className="mb-4">
+              <label className="label-field">Năm quyết toán</label>
+              <select
+                value={data.taxYear}
+                onChange={(e) => handleChange('taxYear', e.target.value)}
+                className="input-field"
+              >
+                <option value="2024">2024 (Luật cũ 7 bậc)</option>
+                <option value="2025">2025 (Luật 5 bậc, giảm trừ 11 / 4.4)</option>
+                <option value="2026">2026 (Luật 5 bậc, giảm trừ 15.5 / 6.2)</option>
+              </select>
+            </div>
+            <FormField
+              label="Thu nhập tổng cộng (VND)"
+              value={data.totalIncome}
+              onChange={(val) => handleChange('totalIncome', val)}
+              type="number"
+              placeholder="100000000"
+              helpText="Tổng lương/tiền lương trong năm"
+              required
+            />
+          </Card>
+
+          {/* Insurance Section */}
+          <Card className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">🏥 Bảo Hiểm Xã Hội (nếu có)</h3>
+            <FormField
+              label="Bảo hiểm xã hội (VND)"
+              value={data.socialInsurance}
+              onChange={(val) => handleChange('socialInsurance', val)}
+              type="number"
+              placeholder="0"
+              helpText="Khoảng 8% lương"
+            />
+            <FormField
+              label="Bảo hiểm y tế (VND)"
+              value={data.healthInsurance}
+              onChange={(val) => handleChange('healthInsurance', val)}
+              type="number"
+              placeholder="0"
+              helpText="Khoảng 3.5% lương"
+            />
+            <FormField
+              label="Bảo hiểm thất nghiệp (VND)"
+              value={data.unemploymentInsurance}
+              onChange={(val) => handleChange('unemploymentInsurance', val)}
+              type="number"
+              placeholder="0"
+              helpText="Khoảng 1% lương"
+            />
+            <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+              <p className="text-sm text-gray-600">
+                Tổng bảo hiểm: <span className="font-semibold">{formatCurrency(totalInsurance)}</span>
+              </p>
+            </div>
+          </Card>
+
+          {/* Dependents Section */}
+          <Card className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">👨‍👩‍👧‍👦 Người Phụ Thuộc</h3>
+            <FormField
+              label="Số người phụ thuộc"
+              value={data.dependents}
+              onChange={(val) => handleChange('dependents', val)}
+              type="number"
+              placeholder="0"
+              helpText="Bao gồm vợ/chồng, con em... được đăng ký phụ thuộc"
+            />
+            <div className="mt-4 p-3 bg-green-50 rounded-lg text-sm text-green-900">
+              <p className="mb-1">Ưu đãi người phụ thuộc:</p>
+              <p className="font-semibold">
+                {formatCurrency((Number(data.dependents) || 0) * 4_400_000 * 12)} /
+                năm
+              </p>
+              <p className="text-xs mt-1">
+                ({formatCurrency((Number(data.dependents) || 0) * 4_400_000)} / tháng)
+              </p>
+            </div>
+          </Card>
+
+          {/* Tax Withheld Section */}
+          <Card className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">💵 Thuế Đã Nộp</h3>
+            <FormField
+              label="Thuế đã nộp hàng năm (VND)"
+              value={data.taxWithheld}
+              onChange={(val) => handleChange('taxWithheld', val)}
+              type="number"
+              placeholder="0"
+              helpText="Số thuế công ty đã khấu trừ trong năm"
+              required
+            />
+          </Card>
+
+          {/* Regulatory Period */}
+          <Card className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">📅 Kỳ Quyết Định</h3>
+            <div className="space-y-3">
+              {[
+                { value: 'before_2025_07_01', label: 'Trước 01/07/2025 (Sử dụng Số CMND)', description: 'Cho các kỳ trước' },
+                { value: 'after_2025_07_01', label: 'Từ 01/07/2025 trở đi (Sử dụng CCCD)', description: 'Kỳ hiện tại' },
+              ].map((option) => (
+                <label key={option.value} className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-100">
+                  <input
+                    type="radio"
+                    name="period"
+                    value={option.value}
+                    checked={data.regulatoryPeriod === option.value}
+                    onChange={(e) => handleChange('regulatoryPeriod', e.target.value as any)}
+                    className="w-5 h-5 accent-blue-600 mt-1"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-900">{option.label}</p>
+                    <p className="text-sm text-gray-600">{option.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-4 mb-6">
+            <Button label="Tiếp tục" type="primary" onClick={handleCalculate} className="w-full" />
+            <Link href="/eligibility">
+              <Button label="Quay lại" type="secondary" className="w-full" />
+            </Link>
+          </div>
+
+          {/* Info Card */}
+          <Card className="bg-amber-50 border-amber-200">
+            <p className="text-sm text-amber-900">
+              <strong>💡 Mẹo:</strong> Bạn có thể tìm thông tin này trên Hóa đơn lương cuối năm hoặc giấy chứng thực nộp bảo hiểm của công ty.
+            </p>
+          </Card>
+        </div>
+      </div>
+      <AIAssistant />
+    </>
+  );
 }
